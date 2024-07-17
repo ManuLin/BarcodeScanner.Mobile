@@ -36,7 +36,7 @@
 		<Copyright>Copyright 2024</Copyright>
 		<PackOnBuild>true</PackOnBuild>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageVersion>8.0.40.1</PackageVersion>
+		<PackageVersion>9.0.0.1</PackageVersion>
 	</PropertyGroup>
 
 	<!-- Going to use latest version library in MAUI -->
