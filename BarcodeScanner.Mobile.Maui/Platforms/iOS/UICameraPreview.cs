@@ -120,13 +120,10 @@ namespace BarcodeScanner.Mobile.Platforms.iOS
 
             }
         }
+
         private void updatePreviewLayer(AVCaptureConnection layer, AVCaptureVideoOrientation orientation)
         {
             layer.VideoOrientation = orientation;
         }
-
-
     }
-
 }
-

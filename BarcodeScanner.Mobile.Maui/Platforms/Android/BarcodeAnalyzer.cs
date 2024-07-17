@@ -16,13 +16,17 @@ namespace BarcodeScanner.Mobile
         private readonly ICameraView _cameraView;
         private long _lastRunTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         private long _lastAnalysisTime = DateTimeOffset.MinValue.ToUnixTimeMilliseconds();
+        private Action _barcodeDisposed;
 
-
-        public BarcodeAnalyzer(ICameraView cameraView)
+        public BarcodeAnalyzer(ICameraView cameraView, Action barcodeDisposed)
         {
+            _barcodeDisposed = barcodeDisposed;
             _cameraView = cameraView;
+
             if (_cameraView != null && _cameraView.ScanInterval < 100)
+            {
                 _cameraView.ScanInterval = 500;
+            }
 
             _barcodeScanner = BarcodeScanning.GetClient(new BarcodeScannerOptions.Builder().SetBarcodeFormats(
                 Configuration.BarcodeFormats)
@@ -35,7 +39,11 @@ namespace BarcodeScanner.Mobile
             try
             {
                 var mediaImage = proxy.Image;
-                if (mediaImage == null) return;
+
+                if (mediaImage == null)
+                {
+                    return;
+                }
 
                 _lastRunTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
@@ -64,16 +72,24 @@ namespace BarcodeScanner.Mobile
                     }
 
                     if (!_cameraView.IsScanning)
+                    {
                         return;
+                    }
 
                     var imageData = Array.Empty<byte>();
+
                     if (_cameraView.ReturnBarcodeImage)
+                    {
                         imageData = ImageUtil.YuvImageToJpegByteArray(proxy, new Android.Graphics.Rect(0, 0, mediaImage.Width, mediaImage.Height), 100, GetImageRotationCorrectionDegrees());
+                    }
 
                     _cameraView.IsScanning = false;
                     _cameraView.TriggerOnDetected(ocrFinalResult, barcodeFinalResult, imageData);
+
                     if (_cameraView.VibrationOnDetected)
+                    {
                         Vibration.Vibrate(200);
+                    }
                 }
             }
             catch (Java.Lang.Exception ex)
@@ -96,7 +112,9 @@ namespace BarcodeScanner.Mobile
                 global::Android.Provider.Settings.System.AccelerometerRotation, 0) == 1;
 
             if (!isAutoRotateEnabled)
+            {
                 return 90;
+            }
 
             global::Android.Views.IWindowManager windowManager = global::Android.App.Application.Context.GetSystemService(global::Android.Content.Context.WindowService).JavaCast<global::Android.Views.IWindowManager>();
 
@@ -129,7 +147,7 @@ namespace BarcodeScanner.Mobile
             catch (ObjectDisposedException) { }
             catch (ArgumentException)
             {
-                //Ignore argument exception, it will be thrown if BarcodeAnalyzer get disposed during processing
+                _barcodeDisposed?.Invoke();
             }
         }
 
@@ -138,7 +156,6 @@ namespace BarcodeScanner.Mobile
             var taskCompletionSource = new TaskCompletionSource<Java.Lang.Object>();
             var taskCompleteListener = new TaskCompleteListener(taskCompletionSource);
             task.AddOnCompleteListener(taskCompleteListener);
-
             return taskCompletionSource.Task;
         }
     }

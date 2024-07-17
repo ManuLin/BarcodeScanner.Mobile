@@ -1,11 +1,10 @@
-﻿using System.Runtime.Intrinsics.X86;
-using AVFoundation;
+﻿using AVFoundation;
+
 using BarcodeScanner.Mobile.Platforms.iOS;
+
 using CoreVideo;
+
 using Foundation;
-using Intents;
-using Microsoft.Maui.Controls.PlatformConfiguration;
-using UIKit;
 
 namespace BarcodeScanner.Mobile
 {
@@ -40,7 +39,9 @@ namespace BarcodeScanner.Mobile
         public void Connect()
         {
             if (DeviceInfo.Current.DeviceType == DeviceType.Virtual)
+            {
                 return;
+            }
 
             ChangeCameraFacing();
             ChangeCameraQuality();
@@ -130,10 +131,14 @@ namespace BarcodeScanner.Mobile
             Microsoft.Maui.Controls.Application.Current.Dispatcher.Dispatch(() =>
             {
                 var videoDevice = AVCaptureDevice.GetDefaultDevice(AVFoundation.AVMediaTypes.Video);
-                if (videoDevice == null) return;
+                if (videoDevice == null)
+                {
+                    return;
+                }
 
                 NSError error;
                 videoDevice.LockForConfiguration(out error);
+
                 if (error == null)
                 {
                     videoDevice.FocusMode = focusMode;
@@ -147,13 +152,19 @@ namespace BarcodeScanner.Mobile
             try
             {
                 if (CaptureDevice == null || !CaptureDevice.HasTorch || !CaptureDevice.TorchAvailable)
+                {
                     return false;
-                else return CaptureDevice.TorchMode == AVCaptureTorchMode.On;
+                }
+                else
+                {
+                    return CaptureDevice.TorchMode == AVCaptureTorchMode.On;
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"iOS IsTorchOn error : {ex.Message}, StackTrace : {ex.StackTrace}");
             }
+
             return false;
         }
         public void HandleTorch()
@@ -161,15 +172,20 @@ namespace BarcodeScanner.Mobile
             Microsoft.Maui.Controls.Application.Current.Dispatcher.Dispatch(() =>
             {
                 if (isUpdatingTorch)
+                {
                     return;
+                }
 
                 if (CaptureDevice == null || !CaptureDevice.HasTorch || !CaptureDevice.TorchAvailable)
+                {
                     return;
+                }
 
                 isUpdatingTorch = true;
 
                 NSError error;
                 CaptureDevice.LockForConfiguration(out error);
+
                 if (error == null)
                 {
                     if (VirtualView.TorchOn == true)
@@ -181,8 +197,8 @@ namespace BarcodeScanner.Mobile
                         CaptureDevice.TorchMode = AVCaptureTorchMode.Off;
                     }
                 }
-                CaptureDevice.UnlockForConfiguration();
 
+                CaptureDevice.UnlockForConfiguration();
                 isUpdatingTorch = false;
             });
         }
@@ -192,7 +208,9 @@ namespace BarcodeScanner.Mobile
             Application.Current.Dispatcher.Dispatch(() =>
             {
                 if (CaptureDevice == null)
+                {
                     return;
+                }
 
                 if (CaptureDevice.LockForConfiguration(out NSError error))
                 {
@@ -220,11 +238,15 @@ namespace BarcodeScanner.Mobile
 
             // For values 0.00 - 0.49 apply zoom of x1 - x2 for better experience
             if (zoomRequest < 0.5F)
+            {
                 zoom = (zoomRequest + 0.5F) * 2F;
+            }
 
             // For values of 0.50 - 1.00 apply zoom of x2 - x4
             if (zoomRequest >= 0.5F)
+            {
                 zoom = zoomRequest * 4;
+            }
 
             return zoom;
         }
@@ -263,7 +285,6 @@ namespace BarcodeScanner.Mobile
 
                 CaptureInput = new AVCaptureDeviceInput(CaptureDevice, out var err);
                 CaptureSession.AddInput(CaptureInput);
-
                 CaptureSession.CommitConfiguration();
             }
         }
@@ -272,12 +293,11 @@ namespace BarcodeScanner.Mobile
         {
 
             var input = CaptureSession.Inputs.FirstOrDefault();
+
             if (input != null && CaptureSession != null)
             {
                 CaptureSession.BeginConfiguration();
-
                 CaptureSession.SessionPreset = GetCaptureSessionResolution(VirtualView.CaptureQuality);
-
                 CaptureSession.CommitConfiguration();
             }
 
@@ -307,7 +327,7 @@ namespace BarcodeScanner.Mobile
                                     },
                                     AVMediaTypes.Video,
                                     position);
-            
+
             return session.Devices.FirstOrDefault();
         }
     }

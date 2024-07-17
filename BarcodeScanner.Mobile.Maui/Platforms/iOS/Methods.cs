@@ -46,36 +46,66 @@ namespace BarcodeScanner.Mobile
             BarcodeFormat visionBarcodeFormat = BarcodeFormat.Unknown;
 
             if (barcodeFormats.HasFlag(BarcodeFormats.CodaBar))
-                visionBarcodeFormat |= BarcodeFormat.CodaBar;
+            { 
+                visionBarcodeFormat |= BarcodeFormat.CodaBar; 
+            }
             if (barcodeFormats.HasFlag(BarcodeFormats.Code128))
-                visionBarcodeFormat |= BarcodeFormat.Code128;
+            { 
+                visionBarcodeFormat |= BarcodeFormat.Code128; 
+            }
             if (barcodeFormats.HasFlag(BarcodeFormats.Code39))
-                visionBarcodeFormat |= BarcodeFormat.Code39;
+            { 
+                visionBarcodeFormat |= BarcodeFormat.Code39; 
+            }
             if (barcodeFormats.HasFlag(BarcodeFormats.Code93))
-                visionBarcodeFormat |= BarcodeFormat.Code93;
+            { 
+                visionBarcodeFormat |= BarcodeFormat.Code93; 
+            }
             if (barcodeFormats.HasFlag(BarcodeFormats.DataMatrix))
-                visionBarcodeFormat |= BarcodeFormat.DataMatrix;
+            { 
+                visionBarcodeFormat |= BarcodeFormat.DataMatrix; 
+            }
             if (barcodeFormats.HasFlag(BarcodeFormats.Ean13))
-                visionBarcodeFormat |= BarcodeFormat.Ean13;
+            { 
+                visionBarcodeFormat |= BarcodeFormat.Ean13; 
+            }
             if (barcodeFormats.HasFlag(BarcodeFormats.Ean8))
-                visionBarcodeFormat |= BarcodeFormat.Ean8;
+            { 
+                visionBarcodeFormat |= BarcodeFormat.Ean8; 
+            }
             if (barcodeFormats.HasFlag(BarcodeFormats.Itf))
-                visionBarcodeFormat |= BarcodeFormat.Itf;
+            { 
+                visionBarcodeFormat |= BarcodeFormat.Itf; 
+            }
             if (barcodeFormats.HasFlag(BarcodeFormats.Pdf417))
-                visionBarcodeFormat |= BarcodeFormat.Pdf417;
+            { 
+                visionBarcodeFormat |= BarcodeFormat.Pdf417; 
+            }
             if (barcodeFormats.HasFlag(BarcodeFormats.QRCode))
-                visionBarcodeFormat |= BarcodeFormat.QrCode;
+            { 
+                visionBarcodeFormat |= BarcodeFormat.QrCode; 
+            }
             if (barcodeFormats.HasFlag(BarcodeFormats.Upca))
+            { 
                 visionBarcodeFormat |= BarcodeFormat.Upca;
+            }
             if (barcodeFormats.HasFlag(BarcodeFormats.Upce))
-                visionBarcodeFormat |= BarcodeFormat.Upce;
+            { 
+                visionBarcodeFormat |= BarcodeFormat.Upce; 
+            }
             if (barcodeFormats.HasFlag(BarcodeFormats.Aztec))
-                visionBarcodeFormat |= BarcodeFormat.Aztec;
+            { 
+                visionBarcodeFormat |= BarcodeFormat.Aztec; 
+            }
             if (barcodeFormats.HasFlag(BarcodeFormats.All))
-                visionBarcodeFormat |= BarcodeFormat.All;
+            { 
+                visionBarcodeFormat |= BarcodeFormat.All; 
+            }
 
             if (visionBarcodeFormat == BarcodeFormat.Unknown)
-                visionBarcodeFormat = BarcodeFormat.All;
+            { 
+                visionBarcodeFormat = BarcodeFormat.All; 
+            }
 
             return visionBarcodeFormat;
         }
@@ -93,13 +123,18 @@ namespace BarcodeScanner.Mobile
             try
             {
                 var status = await Permissions.CheckStatusAsync<Permissions.Camera>();
+
                 if (status != PermissionStatus.Granted)
                 {
                     await Permissions.RequestAsync<Permissions.Camera>();
                 }
+
                 status = await Permissions.CheckStatusAsync<Permissions.Camera>();
+
                 if (status == PermissionStatus.Granted)
+                {
                     return true;
+                }
             }
             catch (Exception ex)
             {
@@ -114,10 +149,6 @@ namespace BarcodeScanner.Mobile
         {
             UIImage image = new UIImage(NSData.FromArray(imageArray));
             var visionImage = new MLImage(image);
-            //VisionImageMetadata metadata = new VisionImageMetadata();
-            //VisionApi vision = VisionApi.Create();
-            //VisionBarcodeDetector barcodeDetector = vision.GetBarcodeDetector(Configuration.BarcodeDetectorSupportFormat);
-            //VisionBarcode[] barcodes = await barcodeDetector.DetectAsync(visionImage);
             var options = new BarcodeScannerOptions(Configuration.BarcodeDetectorSupportFormat);
             var barcodeScanner = MLKit.BarcodeScanning.BarcodeScanner.BarcodeScannerWithOptions(options);
 
@@ -131,6 +162,7 @@ namespace BarcodeScanner.Mobile
                     tcs.TrySetResult(null);
                     return;
                 }
+
                 if (barcodes == null || barcodes.Length == 0)
                 {
                     tcs.TrySetResult(new List<BarcodeResult>());
@@ -140,7 +172,9 @@ namespace BarcodeScanner.Mobile
                 var s = image.Size;
                 List<BarcodeResult> resultList = new List<BarcodeResult>();
                 foreach (var barcode in barcodes)
+                {
                     resultList.Add(ProcessBarcodeResult(barcode));
+                }
 
                 tcs.TrySetResult(resultList);
                 return;
@@ -150,10 +184,12 @@ namespace BarcodeScanner.Mobile
 
         public static BarcodeResult ProcessBarcodeResult(Barcode barcode)
         {
-            List<Microsoft.Maui.Graphics.Point> cornerPoints = new List<Microsoft.Maui.Graphics.Point>();
+           var cornerPoints = new List<Microsoft.Maui.Graphics.Point>();
 
             foreach (var cornerPoint in barcode.CornerPoints)
+            {
                 cornerPoints.Add(new Microsoft.Maui.Graphics.Point(cornerPoint.CGPointValue.X, cornerPoint.CGPointValue.Y));
+            }
             
             return new BarcodeResult
             {

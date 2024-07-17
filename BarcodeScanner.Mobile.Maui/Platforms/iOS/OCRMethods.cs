@@ -1,4 +1,6 @@
-﻿using Foundation;
+﻿using BarcodeScanner.Mobile.Maui.Shared;
+
+using Foundation;
 using UIKit;
 using Vision;
 
@@ -13,10 +15,14 @@ namespace BarcodeScanner.Mobile
             var ocrResult = new OCRResult();
 
             if (result.GetType() != typeof(VNRecognizeTextRequest))
-                return ocrResult; //only interested in text
+            { 
+                return ocrResult;
+            }
 
             if (!result.GetResults<VNRecognizedTextObservation>().Any())
+            {
                 return ocrResult;
+            }
 
             foreach(var o in result.GetResults<VNRecognizedTextObservation>())
             {
@@ -26,7 +32,7 @@ namespace BarcodeScanner.Mobile
 
                 topCandidate.String.Split(" ").ToList().ForEach(e =>
                 {
-                    ocrResult.Elements.Add(new OCRResult.OCRElement { Text = e, Confidence = topCandidate.Confidence });
+                    ocrResult.Elements.Add(new OCRElement { Text = e, Confidence = topCandidate.Confidence });
                 });
 
             }
@@ -48,7 +54,9 @@ namespace BarcodeScanner.Mobile
             var success = ocrHandler.Perform(new VNRequest[] { ocrRequest }, out NSError error);
 
             if (!success)
+            {
                 ocrResult.Success = false;
+            }
 
             return ocrResult;
         }
@@ -73,12 +81,10 @@ namespace BarcodeScanner.Mobile
                 ocrResult.Success = true;
                 tcs.TrySetResult(ocrResult);
             });
+
             ocrRequest.RecognitionLevel = VNRequestTextRecognitionLevel.Accurate;
             ocrHandler.Perform(new VNRequest[] { ocrRequest }, out NSError error);
-
             return await tcs.Task;
         }
-
     }
 }
-

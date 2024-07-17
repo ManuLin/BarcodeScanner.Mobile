@@ -5,6 +5,7 @@ using Xamarin.Google.MLKit.Vision.Common;
 using Android.Graphics;
 using Android.Gms.Extensions;
 using static BarcodeScanner.Mobile.OCRResult;
+using BarcodeScanner.Mobile.Maui.Shared;
 
 namespace BarcodeScanner.Mobile
 {
@@ -57,7 +58,10 @@ namespace BarcodeScanner.Mobile
         {
             using Bitmap bitmap = await BitmapFactory.DecodeByteArrayAsync(imageArray, 0, imageArray.Length);
             if (bitmap == null)
+            {
                 return null;
+            }
+
             using var image = InputImage.FromBitmap(bitmap, 0);
 
             using (var textScanner = TextRecognition.GetClient(Xamarin.Google.MLKit.Vision.Text.Latin.TextRecognizerOptions.DefaultOptions))

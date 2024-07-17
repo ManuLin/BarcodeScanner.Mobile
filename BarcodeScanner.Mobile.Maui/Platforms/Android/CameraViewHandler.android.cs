@@ -1,6 +1,7 @@
 ﻿using Android.Content;
 using Android.Hardware.Camera2;
 using Android.Util;
+
 using AndroidX.Camera.Camera2.InterOp;
 using AndroidX.Camera.Core;
 using AndroidX.Camera.Core.ResolutionSelector;
@@ -8,19 +9,22 @@ using AndroidX.Camera.Lifecycle;
 using AndroidX.Camera.View;
 using AndroidX.Core.Content;
 using AndroidX.Lifecycle;
+
 using Google.Common.Util.Concurrent;
+
 using Java.Lang;
 using Java.Util.Concurrent;
+
 using Exception = System.Exception;
 
 namespace BarcodeScanner.Mobile
 {
-    public partial class CameraViewHandler
+    public partial class CameraViewHandler : IDisposable
     {
         private bool _isDisposed;
-
         private IListenableFuture _cameraFuture;
         private IExecutorService _cameraExecutor;
+        private bool _isAutofocusRunning = false;
 
         private ICamera _camera;
 
@@ -35,6 +39,7 @@ namespace BarcodeScanner.Mobile
 
         private void Connect()
         {
+            _isDisposed = false;
             _cameraExecutor = Executors.NewSingleThreadExecutor();
             _cameraFuture = ProcessCameraProvider.GetInstance(Context);
             _cameraFuture.AddListener(new Runnable(CameraCallback), ContextCompat.GetMainExecutor(Context));
@@ -43,11 +48,15 @@ namespace BarcodeScanner.Mobile
         private void CameraCallback()
         {
             if (_isDisposed)
+            {
                 return;
+            }
 
             // Used to bind the lifecycle of cameras to the lifecycle owner
             if (_cameraFuture?.Get() is not ProcessCameraProvider cameraProvider)
+            {
                 return;
+            }
 
             var selector = new ResolutionSelector.Builder()
                 .SetResolutionStrategy(VirtualView.CaptureQuality.GetTargetResolutionStrategy())
@@ -74,7 +83,7 @@ namespace BarcodeScanner.Mobile
                                 .Build();
 
 
-            imageAnalyzer.SetAnalyzer(_cameraExecutor, new BarcodeAnalyzer(VirtualView));
+            imageAnalyzer.SetAnalyzer(_cameraExecutor, new BarcodeAnalyzer(VirtualView, () => MainThread.BeginInvokeOnMainThread(CameraCallback)));
 
             var cameraSelector = SelectCamera(cameraProvider);
 
@@ -88,13 +97,19 @@ namespace BarcodeScanner.Mobile
                 var lifecycleOwner = Context as ILifecycleOwner ?? (Context as ContextWrapper)?.BaseContext as ILifecycleOwner;
 
                 if (lifecycleOwner == null)
+                {
                     throw new Exception("Unable to find lifecycle owner");
+                }
 
                 // Bind use cases to camera
                 _camera = cameraProvider.BindToLifecycle(lifecycleOwner, cameraSelector, preview, imageAnalyzer);
 
                 HandleTorch();
-                HandleAutoFocus();
+
+                if (!_isAutofocusRunning)
+                {
+                    Task.Run(HandleAutoFocus);
+                }
             }
             catch (Exception exc)
             {
@@ -107,13 +122,17 @@ namespace BarcodeScanner.Mobile
             if (VirtualView.CameraFacing == CameraFacing.Front)
             {
                 if (cameraProvider.HasCamera(CameraSelector.DefaultFrontCamera))
+                {
                     return CameraSelector.DefaultFrontCamera;
+                }
 
                 throw new NotSupportedException("Front camera is not supported in this device");
             }
 
             if (cameraProvider.HasCamera(CameraSelector.DefaultBackCamera))
+            {
                 return CameraSelector.DefaultBackCamera;
+            }
 
             throw new NotSupportedException("Back camera is not supported in this device");
         }
@@ -122,13 +141,15 @@ namespace BarcodeScanner.Mobile
         /// Logic from https://stackoverflow.com/a/66659592/9032777
         /// Focus every 3s
         /// </summary>
-        private async void HandleAutoFocus()
+        private async Task HandleAutoFocus()
         {
-            while (true)
+            _isAutofocusRunning = true;
+
+            while (!_isDisposed)
             {
                 try
                 {
-                    await Task.Delay(3000);
+                    await Task.Delay(Configuration.AutofocusInterval);
 
                     if (_camera == null || _previewView == null)
                     {
@@ -144,21 +165,26 @@ namespace BarcodeScanner.Mobile
                     MeteringPoint afPoint = pointFactory.CreatePoint(x, y, afPointWidth);
                     MeteringPoint aePoint = pointFactory.CreatePoint(x, y, aePointWidth);
 
-                    _camera.CameraControl.StartFocusAndMetering(
-                new FocusMeteringAction.Builder(afPoint,
-                        FocusMeteringAction.FlagAf).AddPoint(aePoint,
-                        FocusMeteringAction.FlagAe).Build());
+                    MainThread.BeginInvokeOnMainThread(() => _camera.CameraControl.StartFocusAndMetering(
+                        new FocusMeteringAction.Builder(afPoint, FocusMeteringAction.FlagAf)
+                            .AddPoint(aePoint, FocusMeteringAction.FlagAe)
+                            .Build()));
                 }
                 catch (Exception ex)
                 {
-
+                    Log.Debug($"{nameof(CameraViewHandler)}-{nameof(HandleAutoFocus)}", ex.ToString());
                 }
             }
+
+            _isAutofocusRunning = false;
         }
 
         private void HandleTorch()
         {
-            if (_camera == null || !_camera.CameraInfo.HasFlashUnit) return;
+            if (_camera == null || !_camera.CameraInfo.HasFlashUnit)
+            {
+                return;
+            }
 
             _camera.CameraControl.EnableTorch(VirtualView.TorchOn);
         }
@@ -166,7 +192,9 @@ namespace BarcodeScanner.Mobile
         private void HandleZoom()
         {
             if (_camera == null)
+            {
                 return;
+            }
 
             _camera.CameraControl.SetLinearZoom(VirtualView.Zoom);
         }
@@ -174,14 +202,26 @@ namespace BarcodeScanner.Mobile
         private void DisableTorchIfNeeded()
         {
             if (_camera == null || !_camera.CameraInfo.HasFlashUnit || (int)_camera.CameraInfo.TorchState?.Value != TorchState.On)
+            {
                 return;
+            }
+
             _camera.CameraControl.EnableTorch(false);
         }
 
-        private void Dispose()
+        public void Dispose() => Dispose(true);
+
+        protected virtual void Dispose(bool disposing)
         {
             if (_isDisposed)
+            {
                 return;
+            }
+
+            if (!disposing)
+            {
+                return;
+            }
 
             DisableTorchIfNeeded();
 
@@ -195,6 +235,9 @@ namespace BarcodeScanner.Mobile
             _cameraFuture?.Dispose();
             _cameraFuture = null;
 
+            _camera.Dispose();
+            _camera = null;
+
             _isDisposed = true;
         }
 
@@ -204,7 +247,9 @@ namespace BarcodeScanner.Mobile
             {
                 // Used to bind the lifecycle of cameras to the lifecycle owner
                 if (_cameraFuture?.Get() is not ProcessCameraProvider cameraProvider)
+                {
                     return;
+                }
 
                 cameraProvider.UnbindAll();
                 cameraProvider.Dispose();
@@ -214,7 +259,5 @@ namespace BarcodeScanner.Mobile
                 Log.Debug($"{nameof(CameraViewHandler)}-{nameof(ClearCameraProvider)}", ex.ToString());
             }
         }
-
-
     }
 }
