@@ -5,7 +5,7 @@
 		<!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
 		<!-- <TargetFrameworks>$(TargetFrameworks);net6.0-tizen</TargetFrameworks> -->
 		<UseMaui>true</UseMaui>
-		<MauiVersion>8.0.70</MauiVersion>
+		<MauiVersion>8.0.20</MauiVersion>
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.0</SupportedOSPlatformVersion>
@@ -17,16 +17,16 @@
 		<RootNamespace>BarcodeScanner.Mobile.Maui</RootNamespace>
 
 		<Product></Product>
-		<AssemblyVersion>8.0.40.1</AssemblyVersion>
-		<AssemblyFileVersion>8.0.40.1</AssemblyFileVersion>
-		<Version>8.0.40.1</Version>
+		<AssemblyVersion>9.0.0.1</AssemblyVersion>
+		<AssemblyFileVersion>9.0.0.1</AssemblyFileVersion>
+		<Version>9.0.0.1</Version>
 		<NeutralLanguage>en</NeutralLanguage>
 
 		<!--Version of C# to use -->
 		<LangVersion>default</LangVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<Authors>Jimmy Pun, Anton Yaroshenko</Authors>
-		<Description>Powerful MAUI barcode scanning library using GoogleVision API for Android and iOS.</Description>
+		<Authors>Jimmy Pun, Anton Yaroshenko, Manuel Lindorfer</Authors>
+		<Description>Powerful MAUI barcode scanning library using GoogleVision API for Android and iOS. This fork includes a fix to resolve potential deadlocks when adjusting the camera's auto focus.</Description>
 		<RepositoryUrl>https://github.com/JimmyPun610/BarcodeScanner.Mobile</RepositoryUrl>
 		<PackageProjectUrl>https://github.com/JimmyPun610/BarcodeScanner.Mobile</PackageProjectUrl>
 		<PackageLicense>https://github.com/JimmyPun610/BarcodeScanner.Mobile</PackageLicense>
