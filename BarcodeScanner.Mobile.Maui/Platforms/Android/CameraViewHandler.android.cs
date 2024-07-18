@@ -235,7 +235,7 @@ namespace BarcodeScanner.Mobile
             _cameraFuture?.Dispose();
             _cameraFuture = null;
 
-            _camera.Dispose();
+            _camera?.Dispose();
             _camera = null;
 
             _isDisposed = true;
@@ -251,8 +251,8 @@ namespace BarcodeScanner.Mobile
                     return;
                 }
 
-                cameraProvider.UnbindAll();
-                cameraProvider.Dispose();
+                cameraProvider?.UnbindAll();
+                cameraProvider?.Dispose();
             }
             catch (Exception ex)
             {
