@@ -36,7 +36,6 @@ namespace BarcodeScanner.Mobile
             return _previewView;
         }
 
-
         private void Connect()
         {
             _isDisposed = false;
@@ -82,7 +81,6 @@ namespace BarcodeScanner.Mobile
                                 .SetResolutionSelector(selector)
                                 .Build();
 
-
             imageAnalyzer.SetAnalyzer(_cameraExecutor, new BarcodeAnalyzer(VirtualView, () => MainThread.BeginInvokeOnMainThread(CameraCallback)));
 
             var cameraSelector = SelectCamera(cameraProvider);
@@ -108,12 +106,12 @@ namespace BarcodeScanner.Mobile
 
                 if (!_isAutofocusRunning)
                 {
-                    Task.Run(HandleAutoFocus);
+                    MainThread.BeginInvokeOnMainThread(async () => await HandleAutoFocus());
                 }
             }
             catch (Exception exc)
             {
-                Log.Debug(nameof(CameraCallback), "Use case binding failed", exc);
+                Log.Debug(nameof(CameraCallback), "Use case binding failed: " + exc.Message + " | " + exc.StackTrace);
             }
         }
 
@@ -166,9 +164,9 @@ namespace BarcodeScanner.Mobile
                     MeteringPoint aePoint = pointFactory.CreatePoint(x, y, aePointWidth);
 
                     MainThread.BeginInvokeOnMainThread(() => _camera.CameraControl.StartFocusAndMetering(
-                        new FocusMeteringAction.Builder(afPoint, FocusMeteringAction.FlagAf)
-                            .AddPoint(aePoint, FocusMeteringAction.FlagAe)
-                            .Build()));
+                       new FocusMeteringAction.Builder(afPoint, FocusMeteringAction.FlagAf)
+                           .AddPoint(aePoint, FocusMeteringAction.FlagAe)
+                           .Build()));
                 }
                 catch (Exception ex)
                 {
