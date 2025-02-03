@@ -64,9 +64,7 @@ namespace BarcodeScanner.Mobile
             var previewBuilder = new Preview.Builder()
                 .SetResolutionSelector(selector);
             var preview = previewBuilder.Build();
-
-            var executor = ContextCompat.GetMainExecutor(Context);
-            preview.SetSurfaceProvider(executor, _previewView.SurfaceProvider);
+            preview.SurfaceProvider = _previewView.SurfaceProvider;
 
             var imageAnalyzerBuilder = new ImageAnalysis.Builder();
             // Frame by frame analyze
@@ -223,22 +221,29 @@ namespace BarcodeScanner.Mobile
                 return;
             }
 
-            DisableTorchIfNeeded();
+            try
+            {
+                DisableTorchIfNeeded();
 
-            _cameraExecutor?.Shutdown();
-            _cameraExecutor?.Dispose();
-            _cameraExecutor = null;
+                _cameraExecutor?.Shutdown();
+                _cameraExecutor?.Dispose();
+                _cameraExecutor = null;
 
-            ClearCameraProvider();
+                ClearCameraProvider();
 
-            _cameraFuture?.Cancel(true);
-            _cameraFuture?.Dispose();
-            _cameraFuture = null;
+                _cameraFuture?.Cancel(true);
+                _cameraFuture?.Dispose();
+                _cameraFuture = null;
 
-            _camera?.Dispose();
-            _camera = null;
+                _camera?.Dispose();
+                _camera = null;
 
-            _isDisposed = true;
+                _isDisposed = true;
+            }
+            catch (Exception ex)
+            {
+                Log.Debug($"{nameof(CameraViewHandler)}-{nameof(Dispose)}", ex.ToString());
+            }
         }
 
         private void ClearCameraProvider()

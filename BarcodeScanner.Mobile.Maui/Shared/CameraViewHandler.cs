@@ -59,7 +59,6 @@ namespace BarcodeScanner.Mobile
             }
 
             Dispose();
-            platformView.Dispose();
             base.DisconnectHandler(platformView);
         }
     }
